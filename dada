@@ -1,0 +1,42 @@
+from flask import Flask, render_template, request
+import random
+
+app = Flask(__name__)
+
+with open("dictionnaire.txt", "r") as file:
+    mots = [mot.strip() for mot in file.readlines()]
+
+@app.route("/")
+def start():
+    return render_template("start.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+@app.route("/play", methods=["POST"])
+def play():
+    nom = request.form.get("nom")
+    mot_a_deviner = random.choice(mots)
+    lettres_trouvees = []
+    vies_restantes = 5
+
+    return render_template("game.html", nom=nom, mot=mot_a_deviner, lettres_trouvees=lettres_trouvees, vies_restantes=vies_restantes)
+
+@app.route("/guess", methods=["POST"])
+def guess():
+    lettre = request.form.get("lettre")
+    mot_a_deviner = request.form.get("mot_a_deviner")
+    lettres_trouvees = list(request.form.get("lettres_trouvees"))
+    vies_restantes = int(request.form.get("vies_restantes"))
+
+    if lettre in mot_a_deviner:
+        lettres_trouvees.append(lettre)
+    else:
+        vies_restantes -= 1
+
+    if vies_restantes == 0:
+        return render_template("lose.html", mot=mot_a_deviner)
+    elif all(lettre in lettres_trouvees for lettre in mot_a_deviner):
+        return render_template("win.html", mot=mot_a_deviner)
+    else:
+        return render_template("game.html", nom=request.form.get("nom"), mot=mot_a_deviner, lettres_trouvees=lettres_trouvees, vies_restantes=vies_restantes)
